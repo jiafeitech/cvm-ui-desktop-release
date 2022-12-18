@@ -1,4 +1,4 @@
-%define autorelease 1
+%define autorelease 2
 
 %define release_name Aess
 %define is_rawhide 0
