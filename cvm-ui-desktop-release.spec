@@ -1,24 +1,9 @@
-## START: Set by rpmautospec
-## (rpmautospec version 0.3.0)
-%define autorelease(e:s:pb:n) %{?-p:0.}%{lua:
-    release_number = 1;
-    base_release_number = tonumber(rpm.expand("%{?-b*}%{!?-b:1}"));
-    print(release_number + base_release_number - 1);
-}%{?-e:.%{-e*}}%{?-s:.%{-s*}}%{!?-n:%{?dist}}
-## END: Set by rpmautospec
+%define autorelease 1
 
-## START: Set by rpmautospec
-## (rpmautospec version 0.2.5)
-%define autorelease(e:s:pb:) %{?-p:0.}%{lua:
-    release_number = 24;
-    base_release_number = tonumber(rpm.expand("%{?-b*}%{!?-b:1}"));
-    print(release_number + base_release_number - 1);
-}%{?-e:.%{-e*}}%{?-s:.%{-s*}}%{?dist}
-## END: Set by rpmautospec
-
-%define release_name 5.1 Aess
+%define release_name Aess
 %define is_rawhide 0
 
+%define cvm_ui_ver 5.1
 %define dist_version 37
 %define rhel_dist_version 10
 
@@ -48,9 +33,6 @@
 Summary:        Cvm UI Desktop release files
 Name:           cvm-ui-desktop-release
 Version:        37
-# The numbering is 0.<r> before a given Fedora Linux release is released,
-# with r starting at 1, and then just <r>, with r starting again at 1.
-# Use '%%autorelease -p' before final, and then drop the '-p'.
 Release:        %autorelease
 License:        MIT
 URL:            https://bit.ly/jiafeishop/
@@ -326,12 +308,12 @@ ln -s cvm-ui-desktop-release %{buildroot}%{_sysconfdir}/system-release
 
 cat << EOF >> os-release
 NAME="Cvm UI Desktop"
-VERSION="%{dist_version} (%{release_name}%{?prerelease})"
+VERSION="%{cvm_ui_ver} (%{release_name}%{?prerelease})"
 ID=cvm-ui-desktop
-VERSION_ID=%{dist_version}
+VERSION_ID=%{cvm_ui_ver}
 VERSION_CODENAME=""
 PLATFORM_ID="platform:f%{dist_version}"
-PRETTY_NAME="Cvm UI Desktop %{dist_version} (%{release_name}%{?prerelease})"
+PRETTY_NAME="Cvm UI Desktop %{cvm_ui_ver} (%{release_name}%{?prerelease})"
 ANSI_COLOR="0;38;2;60;110;180"
 LOGO=cvm-ui-desktop-logo-icon
 CPE_NAME="cpe:/o:fedoraproject:fedora:%{dist_version}"
@@ -523,6 +505,6 @@ ln -s %{_swidtagdir} %{buildroot}%{_sysconfdir}/swid/swidtags.d/fedoraproject.or
 %endif
 
 %changelog
-* Mon Apr 11 2022 Mohan Boddu <mboddu@bhujji.com> 36-17
-- Disable autorelease 'prerelease' for F36 Final
+* Sun Dec 18 2022 Podter <me@podter.xyz> 36-17
+- Cvm UI 5.1 Branding
 
