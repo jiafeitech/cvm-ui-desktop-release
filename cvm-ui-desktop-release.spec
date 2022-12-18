@@ -20,10 +20,10 @@
 %if 0%{?eln}
 %bcond_with basic
 %bcond_without eln
-%bcond_with workstation
+%bcond_with xfce
 %else
 %bcond_with eln
-%bcond_without workstation
+%bcond_without xfce
 %endif
 
 %global dist %{?eln:.eln%{eln}}
@@ -54,6 +54,7 @@ Source22:       80-coreos.preset
 Source23:       zezere-ignition-url
 Source24:       80-iot-user.preset
 Source25:       plasma-desktop.conf
+Source26:       80-kde.preset
 Source27:       81-desktop.preset
 
 BuildArch:      noarch
@@ -178,56 +179,49 @@ itself as Cvm UI Desktop ELN.
 %endif
 
 
-%if %{with workstation}
-%package workstation
-Summary:        Base package for Cvm UI Desktop Workstation-specific default configurations
+%if %{with xfce}
+%package xfce
+Summary:        Base package for Cvm UI Desktop Xfce specific default configurations
 
-RemovePathPostfixes: .workstation
+RemovePathPostfixes: .xfce
 Provides:       cvm-ui-desktop-release = %{version}-%{release}
+Provides:       cvm-ui-desktop-release-xfce
 Provides:       cvm-ui-desktop-release-variant = %{version}-%{release}
 Provides:       fedora-release = %{version}-%{release}
 Provides:       fedora-release-variant = %{version}-%{release}
-Provides:       cvm-ui-desktop-release-workstation
 Obsoletes:       fedora-release
 Obsoletes:       fedora-release-variant
-Obsoletes:       fedora-release-workstation
+Obsoletes:       fedora-release-xfce
 Provides:       system-release
 Provides:       system-release(%{version})
 Provides:       base-module(platform:f%{version})
 Requires:       cvm-ui-desktop-release-common = %{version}-%{release}
-Provides:       system-release-product
-
-# Third-party repositories, disabled by default unless the user opts in through fedora-third-party
-# Requires(meta) to avoid ordering loops - does not need to be installed before the release package
-# Keep this in sync with silverblue above
-Requires(meta):	fedora-flathub-remote
-Requires(meta):	fedora-workstation-repositories
 
 # fedora-release-common Requires: fedora-release-identity, so at least one
 # package must provide it. This Recommends: pulls in
-# fedora-release-identity-workstation if nothing else is already doing so.
-Recommends:     cvm-ui-desktop-release-identity-workstation
+# fedora-release-identity-xfce if nothing else is already doing so.
+Recommends:     cvm-ui-desktop-release-identity-xfce
 
 
-%description workstation
-Provides a base package for Cvm UI Desktop Workstation-specific configuration files to
-depend on.
+%description xfce
+Provides a base package for Cvm UI Desktop Xfce specific configuration files to
+depend on as well as Xfce system defaults.
 
 
-%package identity-workstation
-Summary:        Package providing the identity for Cvm UI Desktop Workstation Edition
+%package identity-xfce
+Summary:        Package providing the identity for Cvm UI Desktop Xfce Spin
 
-RemovePathPostfixes: .workstation
+RemovePathPostfixes: .xfce
 Provides:       cvm-ui-desktop-release-identity = %{version}-%{release}
-Provides:       cvm-ui-desktop-release-identity-workstation
+Provides:       cvm-ui-desktop-release-identity-xfce
 Obsoletes:       fedora-release-identity
-Obsoletes:       fedora-release-identity-workstation
+Obsoletes:       fedora-release-identity-xfce
 Conflicts:      fedora-release-identity
 
 
-%description identity-workstation
-Provides the necessary files for a Cvm UI Desktop installation that is identifying
-itself as Cvm UI Desktop Workstation Edition.
+%description identity-xfce
+Provides the necessary files for a Fedora installation that is identifying
+itself as Cvm UI Desktop Xfce.
 %endif
 
 %prep
@@ -310,22 +304,14 @@ sed -i -e 's|DOCUMENTATION_URL=.*|DOCUMENTATION_URL="https://docs.fedoraproject.
 sed -e "s#\$version#%{bug_version}#g" -e 's/$edition/ELN/;s/<!--.*-->//;/^$/d' %{SOURCE20} > %{buildroot}%{_swidtagdir}/org.fedoraproject.Fedora-edition.swidtag.eln
 %endif
 
-%if %{with workstation}
-# Workstation
+%if %{with xfce}
+# Xfce
 cp -p os-release \
-      %{buildroot}%{_prefix}/lib/os-release.workstation
-echo "VARIANT_ID=workstation" >> %{buildroot}%{_prefix}/lib/os-release.workstation
-sed -e "s#\$version#%{bug_version}#g" -e 's/$edition/Workstation/;s/<!--.*-->//;/^$/d' %{SOURCE20} > %{buildroot}%{_swidtagdir}/org.fedoraproject.Fedora-edition.swidtag.workstation
-# Add Fedora Workstation dnf protected packages list
-install -Dm0644 %{SOURCE21} -t %{buildroot}%{_sysconfdir}/dnf/protected.d/
-%endif
-
-%if %{with silverblue} || %{with workstation}
-# Silverblue and Workstation
-install -Dm0644 %{SOURCE15} -t %{buildroot}%{_prefix}/lib/systemd/system-preset/
-install -Dm0644 %{SOURCE27} -t %{buildroot}%{_prefix}/lib/systemd/system-preset/
-# Override the list of enabled gnome-shell extensions for Workstation
-install -Dm0644 %{SOURCE16} -t %{buildroot}%{_datadir}/glib-2.0/schemas/
+      %{buildroot}%{_prefix}/lib/os-release.xfce
+echo "VARIANT=\"Xfce\"" >> %{buildroot}%{_prefix}/lib/os-release.xfce
+echo "VARIANT_ID=xfce" >> %{buildroot}%{_prefix}/lib/os-release.xfce
+sed -i -e "s|(%{release_name}%{?prerelease})|(Xfce%{?prerelease})|g" %{buildroot}%{_prefix}/lib/os-release.xfce
+sed -e "s#\$version#%{bug_version}#g" -e 's/$edition/Xfce/;s/<!--.*-->//;/^$/d' %{SOURCE20} > %{buildroot}%{_swidtagdir}/org.fedoraproject.Fedora-edition.swidtag.xfce
 %endif
 
 # Create the symlink for /etc/os-release
@@ -416,16 +402,11 @@ ln -s %{_swidtagdir} %{buildroot}%{_sysconfdir}/swid/swidtags.d/fedoraproject.or
 
 
 
-%if %{with workstation}
-%files workstation
-%files identity-workstation
-%{_prefix}/lib/os-release.workstation
-%attr(0644,root,root) %{_swidtagdir}/org.fedoraproject.Fedora-edition.swidtag.workstation
-%{_sysconfdir}/dnf/protected.d/fedora-workstation.conf
-# Keep this in sync with silverblue above
-%{_datadir}/glib-2.0/schemas/org.gnome.shell.gschema.override
-%{_prefix}/lib/systemd/system-preset/80-workstation.preset
-%{_prefix}/lib/systemd/system-preset/81-desktop.preset
+%if %{with xfce}
+%files xfce
+%files identity-xfce
+%{_prefix}/lib/os-release.xfce
+%attr(0644,root,root) %{_swidtagdir}/org.fedoraproject.Fedora-edition.swidtag.xfce
 %endif
 
 %changelog
