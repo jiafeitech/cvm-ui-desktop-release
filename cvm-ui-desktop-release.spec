@@ -1,4 +1,4 @@
-%define autorelease 3
+%define autorelease 4
 
 %define release_name Aess
 %define is_rawhide 0
@@ -310,7 +310,6 @@ cp -p os-release \
       %{buildroot}%{_prefix}/lib/os-release.xfce
 echo "VARIANT=\"Xfce\"" >> %{buildroot}%{_prefix}/lib/os-release.xfce
 echo "VARIANT_ID=xfce" >> %{buildroot}%{_prefix}/lib/os-release.xfce
-sed -i -e "s|(%{release_name}%{?prerelease})|(Xfce%{?prerelease})|g" %{buildroot}%{_prefix}/lib/os-release.xfce
 sed -e "s#\$version#%{bug_version}#g" -e 's/$edition/Xfce/;s/<!--.*-->//;/^$/d' %{SOURCE20} > %{buildroot}%{_swidtagdir}/org.fedoraproject.Fedora-edition.swidtag.xfce
 %endif
 
