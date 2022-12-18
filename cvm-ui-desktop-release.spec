@@ -20,11 +20,9 @@
 %if 0%{?eln}
 %bcond_with basic
 %bcond_without eln
-%bcond_with kde
 %bcond_with workstation
 %else
 %bcond_with eln
-%bcond_without kde
 %bcond_without workstation
 %endif
 
@@ -56,7 +54,6 @@ Source22:       80-coreos.preset
 Source23:       zezere-ignition-url
 Source24:       80-iot-user.preset
 Source25:       plasma-desktop.conf
-Source26:       80-kde.preset
 Source27:       81-desktop.preset
 
 BuildArch:      noarch
@@ -181,51 +178,6 @@ itself as Cvm UI Desktop ELN.
 %endif
 
 
-%if %{with kde}
-%package kde
-Summary:        Base package for Cvm UI Desktop KDE Plasma-specific default configurations
-
-RemovePathPostfixes: .kde
-Provides:       cvm-ui-desktop-release = %{version}-%{release}
-Provides:       cvm-ui-desktop-release-kde
-Provides:       cvm-ui-desktop-release-variant = %{version}-%{release}
-Provides:       fedora-release = %{version}-%{release}
-Provides:       fedora-release-variant = %{version}-%{release}
-Obsoletes:       fedora-release
-Obsoletes:       fedora-release-variant
-Obsoletes:       fedora-release-kde
-Provides:       system-release
-Provides:       system-release(%{version})
-Provides:       base-module(platform:f%{version})
-Requires:       cvm-ui-desktop-release-common = %{version}-%{release}
-
-# fedora-release-common Requires: fedora-release-identity, so at least one
-# package must provide it. This Recommends: pulls in
-# fedora-release-identity-kde if nothing else is already doing so.
-Recommends:     cvm-ui-desktop-release-identity-kde
-
-
-%description kde
-Provides a base package for Cvm UI Desktop KDE Plasma-specific configuration files to
-depend on as well as KDE Plasma system defaults.
-
-
-%package identity-kde
-Summary:        Package providing the identity for Cvm UI Desktop KDE Plasma Spin
-
-RemovePathPostfixes: .kde
-Provides:       cvm-ui-desktop-release-identity = %{version}-%{release}
-Provides:       cvm-ui-desktop-release-identity-kde
-Obsoletes:       fedora-release-identity
-Obsoletes:       fedora-release-identity-kde
-Conflicts:      fedora-release-identity
-
-
-%description identity-kde
-Provides the necessary files for a Cvm UI Desktop installation that is identifying
-itself as Cvm UI Desktop KDE Plasma Spin.
-%endif
-
 %if %{with workstation}
 %package workstation
 Summary:        Base package for Cvm UI Desktop Workstation-specific default configurations
@@ -311,7 +263,7 @@ NAME="Cvm UI Desktop"
 VERSION="%{cvm_ui_ver} (%{release_name}%{?prerelease})"
 ID=cvm-ui-desktop
 VERSION_ID=%{cvm_ui_ver}
-VERSION_CODENAME=""
+VERSION_CODENAME="%{release_name}"
 PLATFORM_ID="platform:f%{dist_version}"
 PRETTY_NAME="Cvm UI Desktop %{cvm_ui_ver} (%{release_name}%{?prerelease})"
 ANSI_COLOR="0;38;2;60;110;180"
@@ -358,18 +310,6 @@ sed -i -e 's|DOCUMENTATION_URL=.*|DOCUMENTATION_URL="https://docs.fedoraproject.
 sed -e "s#\$version#%{bug_version}#g" -e 's/$edition/ELN/;s/<!--.*-->//;/^$/d' %{SOURCE20} > %{buildroot}%{_swidtagdir}/org.fedoraproject.Fedora-edition.swidtag.eln
 %endif
 
-%if %{with kde}
-# KDE Plasma
-cp -p os-release \
-      %{buildroot}%{_prefix}/lib/os-release.kde
-echo "VARIANT=\"KDE Plasma\"" >> %{buildroot}%{_prefix}/lib/os-release.kde
-echo "VARIANT_ID=kde" >> %{buildroot}%{_prefix}/lib/os-release.kde
-sed -i -e "s|(%{release_name}%{?prerelease})|(KDE Plasma%{?prerelease})|g" %{buildroot}%{_prefix}/lib/os-release.kde
-sed -e "s#\$version#%{bug_version}#g" -e 's/$edition/KDE/;s/<!--.*-->//;/^$/d' %{SOURCE20} > %{buildroot}%{_swidtagdir}/org.fedoraproject.Fedora-edition.swidtag.kde
-# Add plasma-desktop to dnf protected packages list for KDE
-install -Dm0644 %{SOURCE25} -t %{buildroot}%{_sysconfdir}/dnf/protected.d/
-%endif
-
 %if %{with workstation}
 # Workstation
 cp -p os-release \
@@ -386,12 +326,6 @@ install -Dm0644 %{SOURCE15} -t %{buildroot}%{_prefix}/lib/systemd/system-preset/
 install -Dm0644 %{SOURCE27} -t %{buildroot}%{_prefix}/lib/systemd/system-preset/
 # Override the list of enabled gnome-shell extensions for Workstation
 install -Dm0644 %{SOURCE16} -t %{buildroot}%{_datadir}/glib-2.0/schemas/
-%endif
-
-%if %{with kde} || %{with kinoite}
-# Common desktop preset and spin specific preset
-install -Dm0644 %{SOURCE26} -t %{buildroot}%{_prefix}/lib/systemd/system-preset/
-install -Dm0644 %{SOURCE27} -t %{buildroot}%{_prefix}/lib/systemd/system-preset/
 %endif
 
 # Create the symlink for /etc/os-release
@@ -480,16 +414,6 @@ ln -s %{_swidtagdir} %{buildroot}%{_sysconfdir}/swid/swidtags.d/fedoraproject.or
 %attr(0644,root,root) %{_swidtagdir}/org.fedoraproject.Fedora-edition.swidtag.eln
 %endif
 
-
-%if %{with kde}
-%files kde
-%files identity-kde
-%{_prefix}/lib/os-release.kde
-%{_prefix}/lib/systemd/system-preset/80-kde.preset
-%{_prefix}/lib/systemd/system-preset/81-desktop.preset
-%attr(0644,root,root) %{_swidtagdir}/org.fedoraproject.Fedora-edition.swidtag.kde
-%{_sysconfdir}/dnf/protected.d/plasma-desktop.conf
-%endif
 
 
 %if %{with workstation}
