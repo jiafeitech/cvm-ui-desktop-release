@@ -7,9 +7,9 @@ supersede the licenses of code and content contained in Fedora, which
 conform to the legal guidelines described at
 https://fedoraproject.org/wiki/Licensing:Main?rd=Licensing.
 
-If you're using generic-release, you're probably remixing the packages
+If you're using cvm-ui-desktop-release, you're probably remixing the packages
 from Fedora into a release that is _NOT_ Fedora. The license of the 
-generic-release package is MIT, as described in LICENSE, or found here: 
+cvm-ui-desktop-release package is MIT, as described in LICENSE, or found here: 
 https://fedoraproject.org/wiki/Licensing:MIT#Modern_Style_with_sublicense 
 
 Red Hat does not claim any compilation copyright on any compilations of 

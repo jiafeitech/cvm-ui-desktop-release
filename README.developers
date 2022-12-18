@@ -1,13 +1,13 @@
 This document provides information about where we are right now and where I'd 
 like to go. Eventually there will be information about how to make tarball 
-releases and update the generic-release packages.
+releases and update the cvm-ui-desktop-release packages.
 
 Currently I have just imported the (extracted) tarball from fedora 20. We 
 currently don't have a build for rawhide with a version of 21. This is 
 the top priority.
 
 fedora-release has some features that would be nice to get into 
-generic-release, in particular the arch mapping that associates the 
+cvm-ui-desktop-release, in particular the arch mapping that associates the 
 correct keys for different architecures.
 
 The package version needs to match the fedora release (unless we switch 
