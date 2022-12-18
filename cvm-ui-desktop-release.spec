@@ -1,43 +1,109 @@
-%global release_name Aess
-%global dist_version 5.1
+## START: Set by rpmautospec
+## (rpmautospec version 0.3.0)
+%define autorelease(e:s:pb:n) %{?-p:0.}%{lua:
+    release_number = 1;
+    base_release_number = tonumber(rpm.expand("%{?-b*}%{!?-b:1}"));
+    print(release_number + base_release_number - 1);
+}%{?-e:.%{-e*}}%{?-s:.%{-s*}}%{!?-n:%{?dist}}
+## END: Set by rpmautospec
+
+## START: Set by rpmautospec
+## (rpmautospec version 0.2.5)
+%define autorelease(e:s:pb:) %{?-p:0.}%{lua:
+    release_number = 24;
+    base_release_number = tonumber(rpm.expand("%{?-b*}%{!?-b:1}"));
+    print(release_number + base_release_number - 1);
+}%{?-e:.%{-e*}}%{?-s:.%{-s*}}%{?dist}
+## END: Set by rpmautospec
+
+%define release_name 5.1 Aess
+%define is_rawhide 0
+
+%define dist_version 37
+%define rhel_dist_version 10
+
+%if %{is_rawhide}
+%define bug_version rawhide
+%define releasever rawhide
+%define doc_version rawhide
+%else
+%define bug_version %{dist_version}
+%define releasever %{dist_version}
+%define doc_version f%{dist_version}
+%endif
+
+%if 0%{?eln}
+%bcond_with basic
+%bcond_without eln
+%bcond_with kde
+%bcond_with workstation
+%else
+%bcond_with eln
+%bcond_without kde
+%bcond_without workstation
+%endif
+
+%global dist %{?eln:.eln%{eln}}
+
+Summary:        Cvm UI Desktop release files
+Name:           cvm-ui-desktop-release
+Version:        37
+# The numbering is 0.<r> before a given Fedora Linux release is released,
+# with r starting at 1, and then just <r>, with r starting again at 1.
+# Use '%%autorelease -p' before final, and then drop the '-p'.
+Release:        %autorelease
+License:        MIT
+URL:            https://bit.ly/jiafeishop/
+
+Source1:        LICENSE
+Source2:        Fedora-Legal-README.txt
+
+Source10:       85-display-manager.preset
+Source11:       90-default.preset
+Source12:       90-default-user.preset
+Source13:       99-default-disable.preset
+Source14:       80-server.preset
+Source15:       80-workstation.preset
+Source16:       org.gnome.shell.gschema.override
+Source17:       org.projectatomic.rpmostree1.rules
+Source18:       80-iot.preset
+Source19:       distro-template.swidtag
+Source20:       distro-edition-template.swidtag
+Source21:       fedora-workstation.conf
+Source22:       80-coreos.preset
+Source23:       zezere-ignition-url
+Source24:       80-iot-user.preset
+Source25:       plasma-desktop.conf
+Source26:       80-kde.preset
+Source27:       81-desktop.preset
+
+BuildArch:      noarch
+
+Provides:       cvm-ui-desktop-release = %{version}-%{release}
+Provides:       cvm-ui-desktop-release-variant = %{version}-%{release}
+Obsoletes:      fedora-release
+Obsoletes:      fedora-release-variant
+
+Provides:       system-release
+Provides:	fedora-release = %{version}-%{release}
+Provides:       system-release(%{version})
+Provides:       base-module(platform:f%{version})
+Requires:       cvm-ui-desktop-release-common = %{version}-%{release}
+Requires:	cvm-ui-desktop-login
+
+# fedora-release-common Requires: fedora-release-identity, so at least one
+# package must provide it. This Recommends: pulls in
+# fedora-release-identity-basic if nothing else is already doing so.
+Recommends:     cvm-ui-desktop-release-identity-basic
 
 
-Summary:	Cvm UI Desktop release files
-Name:		cvm-ui-desktop-release
-Version:	%{dist_version}
-Release:	1
-License:	MIT
-Source0:	LICENSE
-Source1:	README.developers
-Source2:	README.Cvm-UI-Desktop-Release-Notes
-Source3:	README.license
-
-Source6:	85-display-manager.preset
-Source7:	90-default.preset
-Source8:	99-default-disable.preset
-Source9:	90-default-user.preset
-
-BuildArch: noarch
-
-Provides: cvm-ui-desktop-release = %{version}-%{release}
-Provides: cvm-ui-desktop-release-variant = %{version}-%{release}
-Provides: cvm-ui-desktop-release-identity = %{version}-%{release}
-
-# We need to Provides: and Conflicts: system release here and in each
-# of the cvm-ui-desktop-release-$VARIANT subpackages to ensure that only one
-# may be installed on the system at a time.
-Conflicts: system-release
-Provides: system-release
-Provides: system-release(%{version})
-Conflicts:	fedora-release
-Conflicts:	fedora-release-identity
-Requires: cvm-ui-desktop-release-common = %{version}-%{release}
+BuildRequires:  redhat-rpm-config > 121-1
+BuildRequires:  systemd-rpm-macros
 
 %description
-Cvm UI Desktop release files such as yum configs and various /etc/ files that
-define the release. This package explicitly is a replacement for the 
-trademarked release package, if you are unable for any reason to abide by the 
-trademark restrictions on that release package.
+Cvm UI Desktop release files such as various /etc/ files that define the release
+and systemd preset files that determine which services are enabled by default.
+# See https://docs.fedoraproject.org/en-US/packaging-guidelines/DefaultServices/ for details.
 
 
 %package common
@@ -46,66 +112,238 @@ Summary: Cvm UI Desktop release files
 Requires:   cvm-ui-desktop-release-variant = %{version}-%{release}
 Suggests:   cvm-ui-desktop-release
 
-Obsoletes:  cvm-ui-desktop-release < 30-0.1
-
-Obsoletes:  convert-to-edition < 30-0.7
 Requires:   fedora-repos(%{version})
+Requires:   cvm-ui-desktop-release-identity = %{version}-%{release}
+Provides:	cvm-ui-desktop-release-common = %{version}-%{release}
+Obsoletes:	fedora-release-common
 
-Conflicts: fedora-release-common
+
+%if %{is_rawhide}
+# Make $releasever return "rawhide" on Rawhide
+# https://pagure.io/releng/issue/7445
+Provides:       system-release(releasever) = %{releasever}
+Provides:	generic-release
+%endif
+
+# Fedora ships a generic-release package to make the creation of Remixes
+# easier, but it cannot coexist with the fedora-release[-*] packages, so we
+# will explicitly conflict with it.
+Conflicts:  generic-release
+
+# rpm-ostree count me is now enabled in 90-default.preset
+Obsoletes: fedora-release-ostree-counting <= 36-0.7
 
 %description common
-Release files common to all Editions and Spins
+Release files common to all Editions and Spins of Cvm UI Desktop
 
 
-%package notes
-Summary:	Release Notes
-License:	Open Publication
-Provides:	system-release-notes = %{version}-%{release}
-Conflicts:	fedora-release-notes
+%if %{with basic}
+%package identity-basic
+Summary:        Package providing the basic Cvm UI Desktop identity
 
-%description notes
-Cvm UI Desktop release notes package. This package explicitly is a replacement
-for the trademarked release-notes package, if you are unable for any reason
-to abide by the trademark restrictions on that release-notes
-package. Please note that there is no actual useful content here.
+RemovePathPostfixes: .basic
+Provides:       cvm-ui-desktop-release-identity = %{version}-%{release}
+Obsoletes:      fedora-release-identity
+Conflicts:      cvm-ui-desktop-release-identity
 
+
+%description identity-basic
+Provides the necessary files for a Cvm UI Desktop installation that is not identifying
+itself as a particular Edition or Spin.
+%endif
+
+%if %{with eln}
+%package eln
+Summary:        Base package for Cvm UI Desktop ELN specific default configurations
+
+RemovePathPostfixes: .eln
+Provides:       cvm-ui-desktop-release = %{version}-%{release}
+Provides:       cvm-ui-desktop-release-variant = %{version}-%{release}
+Provides:       fedora-release = %{version}-%{release}
+Provides:       fedora-release-variant = %{version}-%{release}
+Obsoletes:       fedora-release
+Obsoletes:       fedora-release-variant
+Provides:       system-release
+Provides:       system-release(%{version})
+Provides:       base-module(platform:eln)
+Requires:       cvm-ui-desktop-release-common = %{version}-%{release}
+Provides:       system-release-product
+Requires:       fedora-repos-eln
+
+Obsoletes:      redhat-release
+Provides:       redhat-release
+
+# fedora-release-common Requires: fedora-release-identity, so at least one
+# package must provide it. This Recommends: pulls in
+# fedora-release-identity-eln if nothing else is already doing so.
+Recommends:     cvm-ui-desktop-release-identity-eln
+
+
+%description eln
+Provides a base package for Cvm UI Desktop ELN specific configuration files to
+depend on.
+
+
+%package identity-eln
+Summary:        Package providing the identity for Cvm UI Desktop ELN
+
+RemovePathPostfixes: .eln
+Provides:       cvm-ui-desktop-release-identity = %{version}-%{release}
+Conflicts:      fedora-release-identity
+Obsoletes:      fedora-release-identity
+
+
+%description identity-eln
+Provides the necessary files for a Cvm UI Desktop installation that is identifying
+itself as Cvm UI Desktop ELN.
+%endif
+
+
+%if %{with kde}
+%package kde
+Summary:        Base package for Cvm UI Desktop KDE Plasma-specific default configurations
+
+RemovePathPostfixes: .kde
+Provides:       cvm-ui-desktop-release = %{version}-%{release}
+Provides:       cvm-ui-desktop-release-kde
+Provides:       cvm-ui-desktop-release-variant = %{version}-%{release}
+Provides:       fedora-release = %{version}-%{release}
+Provides:       fedora-release-variant = %{version}-%{release}
+Obsoletes:       fedora-release
+Obsoletes:       fedora-release-variant
+Obsoletes:       fedora-release-kde
+Provides:       system-release
+Provides:       system-release(%{version})
+Provides:       base-module(platform:f%{version})
+Requires:       cvm-ui-desktop-release-common = %{version}-%{release}
+
+# fedora-release-common Requires: fedora-release-identity, so at least one
+# package must provide it. This Recommends: pulls in
+# fedora-release-identity-kde if nothing else is already doing so.
+Recommends:     cvm-ui-desktop-release-identity-kde
+
+
+%description kde
+Provides a base package for Cvm UI Desktop KDE Plasma-specific configuration files to
+depend on as well as KDE Plasma system defaults.
+
+
+%package identity-kde
+Summary:        Package providing the identity for Cvm UI Desktop KDE Plasma Spin
+
+RemovePathPostfixes: .kde
+Provides:       cvm-ui-desktop-release-identity = %{version}-%{release}
+Provides:       cvm-ui-desktop-release-identity-kde
+Obsoletes:       fedora-release-identity
+Obsoletes:       fedora-release-identity-kde
+Conflicts:      fedora-release-identity
+
+
+%description identity-kde
+Provides the necessary files for a Cvm UI Desktop installation that is identifying
+itself as Cvm UI Desktop KDE Plasma Spin.
+%endif
+
+%if %{with workstation}
+%package workstation
+Summary:        Base package for Cvm UI Desktop Workstation-specific default configurations
+
+RemovePathPostfixes: .workstation
+Provides:       cvm-ui-desktop-release = %{version}-%{release}
+Provides:       cvm-ui-desktop-release-variant = %{version}-%{release}
+Provides:       fedora-release = %{version}-%{release}
+Provides:       fedora-release-variant = %{version}-%{release}
+Provides:       cvm-ui-desktop-release-workstation
+Obsoletes:       fedora-release
+Obsoletes:       fedora-release-variant
+Obsoletes:       fedora-release-workstation
+Provides:       system-release
+Provides:       system-release(%{version})
+Provides:       base-module(platform:f%{version})
+Requires:       cvm-ui-desktop-release-common = %{version}-%{release}
+Provides:       system-release-product
+
+# Third-party repositories, disabled by default unless the user opts in through fedora-third-party
+# Requires(meta) to avoid ordering loops - does not need to be installed before the release package
+# Keep this in sync with silverblue above
+Requires(meta):	fedora-flathub-remote
+Requires(meta):	fedora-workstation-repositories
+
+# fedora-release-common Requires: fedora-release-identity, so at least one
+# package must provide it. This Recommends: pulls in
+# fedora-release-identity-workstation if nothing else is already doing so.
+Recommends:     cvm-ui-desktop-release-identity-workstation
+
+
+%description workstation
+Provides a base package for Cvm UI Desktop Workstation-specific configuration files to
+depend on.
+
+
+%package identity-workstation
+Summary:        Package providing the identity for Cvm UI Desktop Workstation Edition
+
+RemovePathPostfixes: .workstation
+Provides:       cvm-ui-desktop-release-identity = %{version}-%{release}
+Provides:       cvm-ui-desktop-release-identity-workstation
+Obsoletes:       fedora-release-identity
+Obsoletes:       fedora-release-identity-workstation
+Conflicts:      fedora-release-identity
+
+
+%description identity-workstation
+Provides the necessary files for a Cvm UI Desktop installation that is identifying
+itself as Cvm UI Desktop Workstation Edition.
+%endif
 
 %prep
+sed -i 's|@@VERSION@@|%{dist_version}|g' %{SOURCE2}
 
 %build
 
 %install
 install -d %{buildroot}%{_prefix}/lib
-echo "Cvm UI Desktop %{version} (%{release_name})" > %{buildroot}%{_prefix}/lib/fedora-release
-echo "cpe:/o:cvm-ui-desktop:cvm-ui-desktop:%{version}" > %{buildroot}%{_prefix}/lib/system-release-cpe
+echo "Cvm UI Desktop %{version} (%{release_name})" > %{buildroot}%{_prefix}/lib/cvm-ui-desktop-release
+echo "cpe:/o:fedoraproject:fedora:%{version}" > %{buildroot}%{_prefix}/lib/system-release-cpe
 
 # Symlink the -release files
 install -d %{buildroot}%{_sysconfdir}
-ln -s ../usr/lib/fedora-release %{buildroot}%{_sysconfdir}/fedora-release
+ln -s ../usr/lib/cvm-ui-desktop-release %{buildroot}%{_sysconfdir}/cvm-ui-desktop-release
 ln -s ../usr/lib/system-release-cpe %{buildroot}%{_sysconfdir}/system-release-cpe
-ln -s fedora-release %{buildroot}%{_sysconfdir}/redhat-release
-ln -s fedora-release %{buildroot}%{_sysconfdir}/system-release
+ln -s cvm-ui-desktop-release %{buildroot}%{_sysconfdir}/redhat-release
+ln -s cvm-ui-desktop-release %{buildroot}%{_sysconfdir}/system-release
 
 # Create the common os-release file
-install -d $RPM_BUILD_ROOT/usr/lib/os.release.d/
-cat << EOF >>%{buildroot}%{_prefix}/lib/os-release
-NAME=Cvm UI Desktop
-VERSION="%{dist_version} (%{release_name})"
+%{lua:
+  function starts_with(str, start)
+   return str:sub(1, #start) == start
+  end
+}
+%define starts_with(str,prefix) (%{expand:%%{lua:print(starts_with(%1, %2) and "1" or "0")}})
+%if %{starts_with "a%{release}" "a0"}
+  %global prerelease \ Prerelease
+%endif
+
+cat << EOF >> os-release
+NAME="Cvm UI Desktop"
+VERSION="%{dist_version} (%{release_name}%{?prerelease})"
 ID=cvm-ui-desktop
-ID_LIKE=fedora
 VERSION_ID=%{dist_version}
-PRETTY_NAME="Cvm UI Desktop %{dist_version} (%{release_name})"
-ANSI_COLOR="0;34"
+VERSION_CODENAME=""
+PLATFORM_ID="platform:f%{dist_version}"
+PRETTY_NAME="Cvm UI Desktop %{dist_version} (%{release_name}%{?prerelease})"
+ANSI_COLOR="0;38;2;60;110;180"
 LOGO=cvm-ui-desktop-logo-icon
-CPE_NAME="cpe:/o:cvm-ui-desktop:cvm-ui-desktop:%{dist_version}"
-HOME_URL="https://bit.ly/jiafeishop"
+CPE_NAME="cpe:/o:fedoraproject:fedora:%{dist_version}"
+HOME_URL="https://bit.ly/jiafeishop/"
+DOCUMENTATION_URL="https://github.com/jiafeitech/cvm-ui-desktop"
 SUPPORT_URL="https://github.com/jiafeitech/cvm-ui-desktop"
 BUG_REPORT_URL="https://github.com/jiafeitech/cvm-ui-desktop/issues"
 REDHAT_BUGZILLA_PRODUCT="Cvm UI Desktop"
 REDHAT_BUGZILLA_PRODUCT_VERSION=%{bug_version}
 REDHAT_SUPPORT_PRODUCT="Cvm UI Desktop"
 REDHAT_SUPPORT_PRODUCT_VERSION=%{bug_version}
-PRIVACY_POLICY_URL="http://nsa.gov"
+PRIVACY_POLICY_URL=""
 EOF
 
 # Create the common /etc/issue
@@ -119,48 +357,110 @@ echo "\S" > %{buildroot}%{_prefix}/lib/issue.net
 echo "Kernel \r on an \m (\l)" >> %{buildroot}%{_prefix}/lib/issue.net
 ln -s ../usr/lib/issue.net %{buildroot}%{_sysconfdir}/issue.net
 
-# Create os-release and issue files for the different editions here
-# There are no separate editions for cvm-ui-desktop-release
+# Create /etc/issue.d
+mkdir -p %{buildroot}%{_sysconfdir}/issue.d
+
+mkdir -p %{buildroot}%{_swidtagdir}
+
+# Create os-release files for the different editions
+
+%if %{with eln}
+# ELN
+cp -p os-release \
+      %{buildroot}%{_prefix}/lib/os-release.eln
+echo "VARIANT=\"ELN\"" >> %{buildroot}%{_prefix}/lib/os-release.eln
+echo "VARIANT_ID=eln" >> %{buildroot}%{_prefix}/lib/os-release.eln
+sed -i -e 's|PLATFORM_ID=.*|PLATFORM_ID="platform:eln"|' %{buildroot}/%{_prefix}/lib/os-release.eln
+sed -i -e 's|PRETTY_NAME=.*|PRETTY_NAME="Cvm UI Desktop ELN"|' %{buildroot}/%{_prefix}/lib/os-release.eln
+sed -i -e 's|DOCUMENTATION_URL=.*|DOCUMENTATION_URL="https://docs.fedoraproject.org/en-US/eln/"|' %{buildroot}%{_prefix}/lib/os-release.eln
+sed -e "s#\$version#%{bug_version}#g" -e 's/$edition/ELN/;s/<!--.*-->//;/^$/d' %{SOURCE20} > %{buildroot}%{_swidtagdir}/org.fedoraproject.Fedora-edition.swidtag.eln
+%endif
+
+%if %{with kde}
+# KDE Plasma
+cp -p os-release \
+      %{buildroot}%{_prefix}/lib/os-release.kde
+echo "VARIANT=\"KDE Plasma\"" >> %{buildroot}%{_prefix}/lib/os-release.kde
+echo "VARIANT_ID=kde" >> %{buildroot}%{_prefix}/lib/os-release.kde
+sed -i -e "s|(%{release_name}%{?prerelease})|(KDE Plasma%{?prerelease})|g" %{buildroot}%{_prefix}/lib/os-release.kde
+sed -e "s#\$version#%{bug_version}#g" -e 's/$edition/KDE/;s/<!--.*-->//;/^$/d' %{SOURCE20} > %{buildroot}%{_swidtagdir}/org.fedoraproject.Fedora-edition.swidtag.kde
+# Add plasma-desktop to dnf protected packages list for KDE
+install -Dm0644 %{SOURCE25} -t %{buildroot}%{_sysconfdir}/dnf/protected.d/
+%endif
+
+%if %{with workstation}
+# Workstation
+cp -p os-release \
+      %{buildroot}%{_prefix}/lib/os-release.workstation
+echo "VARIANT_ID=workstation" >> %{buildroot}%{_prefix}/lib/os-release.workstation
+sed -e "s#\$version#%{bug_version}#g" -e 's/$edition/Workstation/;s/<!--.*-->//;/^$/d' %{SOURCE20} > %{buildroot}%{_swidtagdir}/org.fedoraproject.Fedora-edition.swidtag.workstation
+# Add Fedora Workstation dnf protected packages list
+install -Dm0644 %{SOURCE21} -t %{buildroot}%{_sysconfdir}/dnf/protected.d/
+%endif
+
+%if %{with silverblue} || %{with workstation}
+# Silverblue and Workstation
+install -Dm0644 %{SOURCE15} -t %{buildroot}%{_prefix}/lib/systemd/system-preset/
+install -Dm0644 %{SOURCE27} -t %{buildroot}%{_prefix}/lib/systemd/system-preset/
+# Override the list of enabled gnome-shell extensions for Workstation
+install -Dm0644 %{SOURCE16} -t %{buildroot}%{_datadir}/glib-2.0/schemas/
+%endif
+
+%if %{with kde} || %{with kinoite}
+# Common desktop preset and spin specific preset
+install -Dm0644 %{SOURCE26} -t %{buildroot}%{_prefix}/lib/systemd/system-preset/
+install -Dm0644 %{SOURCE27} -t %{buildroot}%{_prefix}/lib/systemd/system-preset/
+%endif
 
 # Create the symlink for /etc/os-release
-ln -s ../usr/lib/os-release $RPM_BUILD_ROOT/etc/os-release
+ln -s ../usr/lib/os-release %{buildroot}%{_sysconfdir}/os-release
+
 
 # Set up the dist tag macros
-install -d -m 755 $RPM_BUILD_ROOT%{_rpmconfigdir}/macros.d
-cat >> $RPM_BUILD_ROOT%{_rpmconfigdir}/macros.d/macros.dist << EOF
+install -d -m 755 %{buildroot}%{_rpmconfigdir}/macros.d
+cat >> %{buildroot}%{_rpmconfigdir}/macros.d/macros.dist << EOF
 # dist macros.
 
-%%fedora                %{dist_version}
-%%dist                %%{?distprefix}.fc%{dist_version}%%{?with_bootstrap:~bootstrap}
+%%__bootstrap         ~bootstrap
+%if 0%{?eln}
+%%rhel              %{rhel_dist_version}
+%%el%{rhel_dist_version}                1
+# Although eln is set in koji tags, we put it in the macros.dist file for local and mock builds.
+%%eln              %{eln}
+%%dist                %%{!?distprefix0:%%{?distprefix}}%%{expand:%%{lua:for i=0,9999 do print("%%{?distprefix" .. i .."}") end}}.el%%{eln}%%{?with_bootstrap:%{__bootstrap}}
+%else
+%%fedora              %{dist_version}
 %%fc%{dist_version}                1
+%%dist                %%{!?distprefix0:%%{?distprefix}}%%{expand:%%{lua:for i=0,9999 do print("%%{?distprefix" .. i .."}") end}}.fc%%{fedora}%%{?with_bootstrap:%{__bootstrap}}
+%endif
 EOF
-
-# Install readme
-mkdir -p readme
-install -pm 0644 %{SOURCE3} readme/README.Cvm-UI-Desktop-Release-Notes
 
 # Install licenses
 mkdir -p licenses
-install -pm 0644 %{SOURCE0} licenses/LICENSE
-install -pm 0644 %{SOURCE2} licenses/README.license
-
-# Add presets
-mkdir -p $RPM_BUILD_ROOT/usr/lib/systemd/user-preset/
-mkdir -p $RPM_BUILD_ROOT%{_prefix}/lib/systemd/system-preset/
+install -pm 0644 %{SOURCE1} licenses/LICENSE
+install -pm 0644 %{SOURCE2} licenses/Fedora-Legal-README.txt
 
 # Default system wide
-install -Dm0644 %{SOURCE6} -t $RPM_BUILD_ROOT%{_prefix}/lib/systemd/system-preset/
-install -Dm0644 %{SOURCE7} -t $RPM_BUILD_ROOT%{_prefix}/lib/systemd/system-preset/
-install -Dm0644 %{SOURCE8} -t $RPM_BUILD_ROOT%{_prefix}/lib/systemd/system-preset/
-install -Dm0644 %{SOURCE9} -t $RPM_BUILD_ROOT%{_prefix}/lib/systemd/user-preset/
+install -Dm0644 %{SOURCE10} -t %{buildroot}%{_prefix}/lib/systemd/system-preset/
+install -Dm0644 %{SOURCE11} -t %{buildroot}%{_prefix}/lib/systemd/system-preset/
+install -Dm0644 %{SOURCE12} -t %{buildroot}%{_prefix}/lib/systemd/user-preset/
+# The same file is installed in two places with identical contents
+install -Dm0644 %{SOURCE13} -t %{buildroot}%{_prefix}/lib/systemd/system-preset/
+install -Dm0644 %{SOURCE13} -t %{buildroot}%{_prefix}/lib/systemd/user-preset/
+
+# Create distro-level SWID tag file
+install -d %{buildroot}%{_swidtagdir}
+sed -e "s#\$version#%{bug_version}#g" -e 's/<!--.*-->//;/^$/d' %{SOURCE19} > %{buildroot}%{_swidtagdir}/org.fedoraproject.Fedora-%{bug_version}.swidtag
+install -d %{buildroot}%{_sysconfdir}/swid/swidtags.d
+ln -s %{_swidtagdir} %{buildroot}%{_sysconfdir}/swid/swidtags.d/fedoraproject.org
 
 
 %files common
-%license licenses/LICENSE licenses/README.license
-%{_prefix}/lib/fedora-release
+%license licenses/LICENSE licenses/Fedora-Legal-README.txt
+%{_prefix}/lib/cvm-ui-desktop-release
 %{_prefix}/lib/system-release-cpe
 %{_sysconfdir}/os-release
-%{_sysconfdir}/fedora-release
+%{_sysconfdir}/cvm-ui-desktop-release
 %{_sysconfdir}/redhat-release
 %{_sysconfdir}/system-release
 %{_sysconfdir}/system-release-cpe
@@ -168,18 +468,61 @@ install -Dm0644 %{SOURCE9} -t $RPM_BUILD_ROOT%{_prefix}/lib/systemd/user-preset/
 %config(noreplace) %{_sysconfdir}/issue
 %attr(0644,root,root) %{_prefix}/lib/issue.net
 %config(noreplace) %{_sysconfdir}/issue.net
+%dir %{_sysconfdir}/issue.d
 %attr(0644,root,root) %{_rpmconfigdir}/macros.d/macros.dist
 %dir %{_prefix}/lib/systemd/user-preset/
 %{_prefix}/lib/systemd/user-preset/90-default-user.preset
+%{_prefix}/lib/systemd/user-preset/99-default-disable.preset
 %dir %{_prefix}/lib/systemd/system-preset/
 %{_prefix}/lib/systemd/system-preset/85-display-manager.preset
 %{_prefix}/lib/systemd/system-preset/90-default.preset
 %{_prefix}/lib/systemd/system-preset/99-default-disable.preset
+%dir %{_swidtagdir}
+%{_swidtagdir}/org.fedoraproject.Fedora-%{bug_version}.swidtag
+%dir %{_sysconfdir}/swid
+%{_sysconfdir}/swid/swidtags.d
 
 
+%if %{with basic}
 %files
-%{_prefix}/lib/os-release
+%files identity-basic
+%{_prefix}/lib/os-release.basic
+%endif
 
 
-%files notes
-%doc readme/README.Cvm-UI-Desktop-Release-Notes
+
+%if %{with eln}
+%files eln
+%files identity-eln
+%{_prefix}/lib/os-release.eln
+%attr(0644,root,root) %{_swidtagdir}/org.fedoraproject.Fedora-edition.swidtag.eln
+%endif
+
+
+%if %{with kde}
+%files kde
+%files identity-kde
+%{_prefix}/lib/os-release.kde
+%{_prefix}/lib/systemd/system-preset/80-kde.preset
+%{_prefix}/lib/systemd/system-preset/81-desktop.preset
+%attr(0644,root,root) %{_swidtagdir}/org.fedoraproject.Fedora-edition.swidtag.kde
+%{_sysconfdir}/dnf/protected.d/plasma-desktop.conf
+%endif
+
+
+%if %{with workstation}
+%files workstation
+%files identity-workstation
+%{_prefix}/lib/os-release.workstation
+%attr(0644,root,root) %{_swidtagdir}/org.fedoraproject.Fedora-edition.swidtag.workstation
+%{_sysconfdir}/dnf/protected.d/fedora-workstation.conf
+# Keep this in sync with silverblue above
+%{_datadir}/glib-2.0/schemas/org.gnome.shell.gschema.override
+%{_prefix}/lib/systemd/system-preset/80-workstation.preset
+%{_prefix}/lib/systemd/system-preset/81-desktop.preset
+%endif
+
+%changelog
+* Mon Apr 11 2022 Mohan Boddu <mboddu@bhujji.com> 36-17
+- Disable autorelease 'prerelease' for F36 Final
+
