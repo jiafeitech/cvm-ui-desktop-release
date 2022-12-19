@@ -1,9 +1,9 @@
 %define autorelease 4
 
-%define release_name Aess
+%define release_name Anal Cream
 %define is_rawhide 0
 
-%define cvm_ui_ver 5.1
+%define cvm_ui_ver 5.2
 %define dist_version 37
 %define rhel_dist_version 10
 
@@ -409,6 +409,6 @@ ln -s %{_swidtagdir} %{buildroot}%{_sysconfdir}/swid/swidtags.d/fedoraproject.or
 %endif
 
 %changelog
-* Sun Dec 18 2022 Podter <me@podter.xyz> 36-17
-- Cvm UI 5.1 Branding
+* Mon Dec 19 2022 Podter <me@podter.xyz> 36-17
+- Cvm UI 5.2 Branding
 
